@@ -1,7 +1,13 @@
 {
   "version": 1,
   "source": {
-    "name": "ikeruhi"
+    "name": "ikeruhi",
+    "observability": {
+      "enabled": true
+    },
+    "workers_dev": true,
+    "preview_urls": true,
+    "routes": []
   },
   "resolved": {
     "name": "ikeruhi",
@@ -13,7 +19,13 @@
         "database_id": "54c79c1b-d0e9-4c89-8647-873638acc436",
         "migrations_dir": "./db/migrations"
       }
-    ]
+    ],
+    "observability": {
+      "enabled": true
+    },
+    "workers_dev": true,
+    "preview_urls": true,
+    "routes": []
   },
-  "text": "{\n  \"name\": \"ikeruhi\",\n  \"account_id\": \"3bae3fb8abf763a2d88406ee1c2a554c\",\n  \"d1_databases\": [\n    {\n      \"binding\": \"DB\",\n      \"database_name\": \"ikeruhi-db\",\n      \"database_id\": \"54c79c1b-d0e9-4c89-8647-873638acc436\",\n      \"migrations_dir\": \"./db/migrations\"\n    }\n  ]\n}\n"
+  "text": "{\n  \"name\": \"ikeruhi\",\n  \"account_id\": \"3bae3fb8abf763a2d88406ee1c2a554c\",\n  \"d1_databases\": [\n    {\n      \"binding\": \"DB\",\n      \"database_name\": \"ikeruhi-db\",\n      \"database_id\": \"54c79c1b-d0e9-4c89-8647-873638acc436\",\n      \"migrations_dir\": \"./db/migrations\"\n    }\n  ],\n  \"observability\": {\n    \"enabled\": true\n  },\n  \"workers_dev\": true,\n  \"preview_urls\": true,\n  \"routes\": []\n}\n"
 }
