@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import type { Mark } from '../core/aggregate.ts';
 import { type DateStr, WEEKDAY_LABELS, addDays, diffDays, formatShort, todayJst, weekdayOf } from '../core/dates.ts';
 import { api, closeOr } from './api.ts';
-import { Chevron, DayPicker, PeriodCalendar, RangeCalendar, WeekdayToggles } from './Calendar.tsx';
+import { Chevron, DayPicker, PeriodCalendar, RangeCalendar, TallyCalendar, WeekdayToggles, XIcon } from './Calendar.tsx';
 import { type NgState, activeDates, ngOf, setDateNg, toggleWeekday } from './ngState.ts';
 
 export interface EventView {
@@ -20,14 +20,97 @@ export interface EventView {
   };
   round: { dates: DateStr[]; deadline: string; createdAt: string } | null;
   me: { weekdayNg: number[]; marks: Record<DateStr, Mark>; wish: string; updatedAt: string | null } | null;
+  everyone: { names: string[]; days: Record<DateStr, { ng: number[]; unknown: number[] }> };
 }
 
-function Header(props: { title: string; sub?: string }) {
+function Header(props: { title: string; sub?: string; action?: ReactNode }) {
   return (
     <header className="head">
-      <h1 className="head-title">{props.title}</h1>
-      {props.sub && <div className="head-sub">{props.sub}</div>}
+      <div className="head-text">
+        <h1 className="head-title">{props.title}</h1>
+        {props.sub && <div className="head-sub">{props.sub}</div>}
+      </div>
+      {props.action}
     </header>
+  );
+}
+
+function PeopleIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="9" cy="8.5" r="3" />
+      <circle cx="16.5" cy="9.5" r="2.5" />
+      <path d="M3.5 19.5c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5M15 14.5c2.8 0 5.5 1.8 5.5 5" />
+    </svg>
+  );
+}
+
+function EveryoneButton(props: { onClick: () => void }) {
+  return (
+    <button type="button" className="head-btn" aria-label="みんなの予定" onClick={props.onClick}>
+      <PeopleIcon />
+    </button>
+  );
+}
+
+// ---- ⑤ みんなの予定 ----
+
+export function EveryoneView(props: { data: EventView; onClose: () => void }) {
+  const { event: ev, today, everyone } = props.data;
+  const first = ev.startDate < today ? (today <= ev.endDate ? today : ev.endDate) : ev.startDate;
+  const [sel, setSel] = useState<DateStr>(first);
+  const all = everyone.names.map((_, i) => i);
+  const dayOf = (d: DateStr) => everyone.days[d] ?? { ng: [], unknown: [] };
+  const tally = (d: DateStr) => {
+    const x = dayOf(d);
+    const unknown = x.unknown.filter((i) => !x.ng.includes(i)).length;
+    return { ng: x.ng.length, unknown, ok: all.length - x.ng.length - unknown };
+  };
+  const x = dayOf(sel);
+  const ngNames = x.ng.map((i) => everyone.names[i]);
+  const unknownNames = x.unknown.filter((i) => !x.ng.includes(i)).map((i) => everyone.names[i]);
+  const okNames = all.filter((i) => !x.ng.includes(i) && !x.unknown.includes(i)).map((i) => everyone.names[i]);
+  const groups: Array<[string, string, string[]]> = [
+    ['空いてない', 'var(--ng)', ngNames],
+    ['分からない', 'var(--unknown)', unknownNames],
+    ['空いてる', 'var(--theme)', okNames],
+  ];
+  return (
+    <main className="page">
+      <Header
+        title={ev.name}
+        sub="みんなの予定"
+        action={
+          <button type="button" className="head-btn" aria-label="閉じる" onClick={props.onClose}>
+            <XIcon size={22} />
+          </button>
+        }
+      />
+      <div className="body everyone">
+        <TallyCalendar start={ev.startDate} end={ev.endDate} today={today} tally={tally} selected={sel} onSelect={setSel} />
+        <span className="label rows-label">
+          {Number(sel.slice(5, 7))}/{Number(sel.slice(8))}({WEEKDAY_LABELS[weekdayOf(sel)]})
+        </span>
+        <div className="card who">
+          {groups
+            .filter(([, , names]) => names.length > 0)
+            .map(([label, color, names]) => (
+              <div key={label} className="who-group">
+                <span className="who-label">
+                  <span className="who-dot" style={{ background: color }} />
+                  {label}
+                </span>
+                <div className="who-names">
+                  {names.map((n, i) => (
+                    <span key={i}>{n}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          {all.length === 0 && <span className="who-label">まだ誰も答えていません</span>}
+        </div>
+      </div>
+    </main>
   );
 }
 
@@ -281,10 +364,16 @@ export function RoughView(props: { data: EventView }) {
   const [state, setState] = useState<NgState>({ weekdayNg: me?.weekdayNg ?? [], marks: me?.marks ?? {} });
   const [wish, setWish] = useState(me?.wish ?? '');
   const s = useSubmitAnswer(ev.id, state, wish);
+  const [showAll, setShowAll] = useState(false);
   if (s.done) return <Done text="送信しました" />;
+  if (showAll) return <EveryoneView data={props.data} onClose={() => setShowAll(false)} />;
   return (
     <main className="page">
-      <Header title={ev.name} sub={ev.answerDeadline ? leftLabel(ev.answerDeadline) ?? undefined : undefined} />
+      <Header
+        title={ev.name}
+        sub={ev.answerDeadline ? leftLabel(ev.answerDeadline) ?? undefined : undefined}
+        action={<EveryoneButton onClick={() => setShowAll(true)} />}
+      />
       <div className="body">
         <div className="card ng-card">
           <span className="label">空いてない日を選ぶ</span>
@@ -328,6 +417,7 @@ export function RecheckView(props: { data: EventView }) {
   const [touched, setTouched] = useState<Set<DateStr>>(() => new Set(targets.filter(answeredInRound)));
   const [wish, setWish] = useState(me?.wish ?? '');
   const [open, setOpen] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const s = useSubmitAnswer(ev.id, state, wish);
 
   const choose = (d: DateStr, m: Mark) => {
@@ -354,9 +444,10 @@ export function RecheckView(props: { data: EventView }) {
   const sub = left ?? (ev.status === 'tentative' ? '仮決定' : ev.status === 'decided' ? '決定' : undefined);
 
   if (s.done) return <Done text="送信しました" />;
+  if (showAll) return <EveryoneView data={props.data} onClose={() => setShowAll(false)} />;
   return (
     <main className="page">
-      <Header title={ev.name} sub={sub} />
+      <Header title={ev.name} sub={sub} action={<EveryoneButton onClick={() => setShowAll(true)} />} />
       <div className="body">
         <span className="label rows-label">この日は空いてる？</span>
         <div className="card rows">

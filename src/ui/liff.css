@@ -11,6 +11,7 @@
   --faint: #A0ADA9;
   --line: #E2EAE7;
   --disabled: #DEE6E3;
+  --unknown: #C6D0CD;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--ground); color: var(--text); }
@@ -33,7 +34,9 @@ h1 { margin: 0; }
 .grid7 { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
 
 /* ヘッダー */
-.head { padding: 20px 16px 8px; display: flex; flex-direction: column; gap: 2px; }
+.head { padding: 20px 16px 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.head-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.head-btn { width: 48px; height: 48px; flex: none; border: none; border-radius: 24px; background: #fff; display: flex; align-items: center; justify-content: center; }
 .head-title { font-size: 26px; font-weight: 700; overflow-wrap: anywhere; }
 .head-sub { font-size: 14px; color: var(--theme-dark); font-weight: 700; }
 
@@ -128,3 +131,18 @@ h1 { margin: 0; }
 }
 .primary:disabled { background: var(--disabled); color: var(--sub); cursor: default; }
 .error { color: var(--ng); font-size: 14px; text-align: center; margin-top: 8px; }
+
+/* ⑤ みんなの予定 */
+.everyone { padding-top: 8px; }
+.tcal { padding: 8px 10px 14px; display: flex; flex-direction: column; gap: 6px; }
+.tcal-head { padding: 6px 0 2px; margin-bottom: 0; }
+.tcal-month { display: flex; flex-direction: column; gap: 2px; padding-top: 6px; }
+.tcal-cell { width: 44px; height: 54px; border: none; background: transparent; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.tcal-cell.is-past .pcal-num { color: var(--faint); }
+.pcal-num.is-sel { background: var(--theme); color: #fff; font-weight: 700; }
+.tbar { display: flex; width: 36px; height: 6px; border-radius: 3px; overflow: hidden; }
+.who { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.who-group { display: flex; flex-direction: column; gap: 6px; }
+.who-label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--sub); }
+.who-dot { width: 10px; height: 10px; border-radius: 5px; }
+.who-names { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 16px; font-weight: 700; padding-left: 18px; }

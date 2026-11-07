@@ -8,9 +8,10 @@ export const WEEK_LABELS = ['月', '火', '水', '木', '金', '土', '日'] as 
 /** 月曜を0とした列番号 */
 const colOf = (d: DateStr) => (weekdayOf(d) + 6) % 7;
 
-export function XIcon() {
+export function XIcon(props: { size?: number }) {
+  const size = props.size ?? 16;
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={size > 16 ? 2.2 : 3} strokeLinecap="round" aria-hidden="true">
       <path d="M6 6l12 12M18 6L6 18" />
     </svg>
   );
@@ -225,6 +226,76 @@ function DayPickerInner(props: { init: DateStr; min: DateStr; max: DateStr; valu
           );
         })}
       </div>
+    </div>
+  );
+}
+
+export interface DayTally {
+  ok: number;
+  ng: number;
+  unknown: number;
+}
+
+/** ⑤ みんなの予定。日付の下に、空いてる・空いてない・分からないの人数を1本の棒で出す */
+export function TallyCalendar(props: {
+  start: DateStr;
+  end: DateStr;
+  today: DateStr;
+  tally: (d: DateStr) => DayTally;
+  selected: DateStr | null;
+  onSelect: (d: DateStr) => void;
+}) {
+  return (
+    <div className="card tcal">
+      <div className="grid7 whead tcal-head">
+        {WEEK_LABELS.map((w) => (
+          <span key={w}>{w}</span>
+        ))}
+      </div>
+      {splitMonths(props.start, props.end).map(({ first, last }) => {
+        const m = Number(first.slice(5, 7));
+        return (
+          <div key={first} className="tcal-month">
+            <div className="grid7">
+              {Array.from({ length: 7 }, (_, i) => (
+                <span key={i} className="pcal-label">{i === colOf(first) ? `${m}月` : ''}</span>
+              ))}
+            </div>
+            <div className="grid7 pcal-days">
+              {weekCells(first, last).map((d, i) => {
+                if (!d) return <span key={i} className="tcal-cell" />;
+                const day = Number(d.slice(8));
+                const t = props.tally(d);
+                const total = t.ok + t.ng + t.unknown;
+                const past = d < props.today;
+                const sel = d === props.selected;
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    className={`tcal-cell${past ? ' is-past' : ''}`}
+                    disabled={past}
+                    aria-pressed={sel}
+                    aria-label={`${m}月${day}日 空いてる${t.ok}人 空いてない${t.ng}人 分からない${t.unknown}人`}
+                    onClick={() => props.onSelect(d)}
+                  >
+                    <span className={`pcal-num${sel ? ' is-sel' : ''}`}>{day}</span>
+                    <span className="tbar">
+                      {total > 0 && !past && (
+                        <>
+                          <span style={{ flex: t.ok, background: 'var(--theme)' }} />
+                          <span style={{ flex: t.ng, background: 'var(--ng)' }} />
+                          <span style={{ flex: t.unknown, background: 'var(--unknown)' }} />
+                        </>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
