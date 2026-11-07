@@ -57,24 +57,51 @@ function EveryoneButton(props: { onClick: () => void }) {
 
 export function EveryoneView(props: { data: EventView; onClose: () => void }) {
   const { event: ev, today, everyone } = props.data;
-  const first = ev.startDate < today ? (today <= ev.endDate ? today : ev.endDate) : ev.startDate;
-  const [sel, setSel] = useState<DateStr>(first);
+  const [sel, setSel] = useState<{ date: DateStr; up: boolean } | null>(null);
   const all = everyone.names.map((_, i) => i);
-  const dayOf = (d: DateStr) => everyone.days[d] ?? { ng: [], unknown: [] };
-  const tally = (d: DateStr) => {
-    const x = dayOf(d);
-    const unknown = x.unknown.filter((i) => !x.ng.includes(i)).length;
-    return { ng: x.ng.length, unknown, ok: all.length - x.ng.length - unknown };
+  const groupsOf = (d: DateStr) => {
+    const x = everyone.days[d] ?? { ng: [], unknown: [] };
+    const unknown = x.unknown.filter((i) => !x.ng.includes(i));
+    const ok = all.filter((i) => !x.ng.includes(i) && !unknown.includes(i));
+    return { ng: x.ng, unknown, ok };
   };
-  const x = dayOf(sel);
-  const ngNames = x.ng.map((i) => everyone.names[i]);
-  const unknownNames = x.unknown.filter((i) => !x.ng.includes(i)).map((i) => everyone.names[i]);
-  const okNames = all.filter((i) => !x.ng.includes(i) && !x.unknown.includes(i)).map((i) => everyone.names[i]);
-  const groups: Array<[string, string, string[]]> = [
-    ['空いてない', 'var(--ng)', ngNames],
-    ['分からない', 'var(--unknown)', unknownNames],
-    ['空いてる', 'var(--theme)', okNames],
-  ];
+  const tally = (d: DateStr) => {
+    const g = groupsOf(d);
+    return { ng: g.ng.length, unknown: g.unknown.length, ok: g.ok.length };
+  };
+  const tip = (d: DateStr, col: number) => {
+    const g = groupsOf(d);
+    const rows: Array<[string, string, number[]]> = [
+      ['空いてない', '#E8705F', g.ng],
+      ['分からない', 'var(--unknown)', g.unknown],
+      ['空いてる', '#4FB394', g.ok],
+    ];
+    const h = col <= 1 ? 'l' : col >= 5 ? 'r' : 'c';
+    return (
+      <div role="tooltip" className={`tip tip-${h}${sel?.up ? ' tip-up' : ''}`}>
+        <span className="tip-arrow" />
+        <span className="tip-date">
+          {Number(d.slice(5, 7))}/{Number(d.slice(8))}({WEEKDAY_LABELS[weekdayOf(d)]})
+        </span>
+        {all.length === 0 && <span className="tip-group">まだ誰も答えていません</span>}
+        {rows
+          .filter(([, , ids]) => ids.length > 0)
+          .map(([label, color, ids]) => (
+            <div key={label} className="tip-group">
+              <span className="tip-label">
+                <span className="tip-dot" style={{ background: color }} />
+                {label}
+              </span>
+              <span className="tip-names">
+                {ids.map((i) => (
+                  <span key={i}>{everyone.names[i]}</span>
+                ))}
+              </span>
+            </div>
+          ))}
+      </div>
+    );
+  };
   return (
     <main className="page">
       <Header
@@ -87,28 +114,15 @@ export function EveryoneView(props: { data: EventView; onClose: () => void }) {
         }
       />
       <div className="body everyone">
-        <TallyCalendar start={ev.startDate} end={ev.endDate} today={today} tally={tally} selected={sel} onSelect={setSel} />
-        <span className="label rows-label">
-          {Number(sel.slice(5, 7))}/{Number(sel.slice(8))}({WEEKDAY_LABELS[weekdayOf(sel)]})
-        </span>
-        <div className="card who">
-          {groups
-            .filter(([, , names]) => names.length > 0)
-            .map(([label, color, names]) => (
-              <div key={label} className="who-group">
-                <span className="who-label">
-                  <span className="who-dot" style={{ background: color }} />
-                  {label}
-                </span>
-                <div className="who-names">
-                  {names.map((n, i) => (
-                    <span key={i}>{n}</span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          {all.length === 0 && <span className="who-label">まだ誰も答えていません</span>}
-        </div>
+        <TallyCalendar
+          start={ev.startDate}
+          end={ev.endDate}
+          today={today}
+          tally={tally}
+          selected={sel?.date ?? null}
+          onSelect={(d, up) => setSel(d ? { date: d, up } : null)}
+          tip={tip}
+        />
       </div>
     </main>
   );

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { type DateStr, addDays, weekdayOf } from '../core/dates.ts';
 
 /** 週は月曜はじまり。表示の並びと曜日番号（0=日）の対応 */
@@ -243,7 +243,9 @@ export function TallyCalendar(props: {
   today: DateStr;
   tally: (d: DateStr) => DayTally;
   selected: DateStr | null;
-  onSelect: (d: DateStr) => void;
+  onSelect: (d: DateStr | null, up: boolean) => void;
+  /** 選んだ日の下（up のときは上）に出す吹き出し */
+  tip?: (d: DateStr, col: number) => ReactNode;
 }) {
   return (
     <div className="card tcal">
@@ -269,27 +271,37 @@ export function TallyCalendar(props: {
                 const total = t.ok + t.ng + t.unknown;
                 const past = d < props.today;
                 const sel = d === props.selected;
+                const button = (
+                    <button
+                      type="button"
+                      className={`tcal-cell${past ? ' is-past' : ''}`}
+                      disabled={past}
+                      aria-pressed={sel}
+                      aria-label={`${m}月${day}日 空いてる${t.ok}人 空いてない${t.ng}人 分からない${t.unknown}人`}
+                      onClick={(e) => {
+                        // 画面の下半分の日は吹き出しを上に出す
+                        const r = e.currentTarget.getBoundingClientRect();
+                        props.onSelect(sel ? null : d, r.top > window.innerHeight / 2);
+                      }}
+                    >
+                      <span className={`pcal-num${sel ? ' is-sel' : ''}`}>{day}</span>
+                      <span className="tbar">
+                        {total > 0 && !past && (
+                          <>
+                            <span style={{ flex: t.ok, background: 'var(--theme)' }} />
+                            <span style={{ flex: t.ng, background: 'var(--ng)' }} />
+                            <span style={{ flex: t.unknown, background: 'var(--unknown)' }} />
+                          </>
+                        )}
+                      </span>
+                    </button>
+                );
+                if (!sel || !props.tip) return <span key={d} className="tcal-slot">{button}</span>;
                 return (
-                  <button
-                    key={d}
-                    type="button"
-                    className={`tcal-cell${past ? ' is-past' : ''}`}
-                    disabled={past}
-                    aria-pressed={sel}
-                    aria-label={`${m}月${day}日 空いてる${t.ok}人 空いてない${t.ng}人 分からない${t.unknown}人`}
-                    onClick={() => props.onSelect(d)}
-                  >
-                    <span className={`pcal-num${sel ? ' is-sel' : ''}`}>{day}</span>
-                    <span className="tbar">
-                      {total > 0 && !past && (
-                        <>
-                          <span style={{ flex: t.ok, background: 'var(--theme)' }} />
-                          <span style={{ flex: t.ng, background: 'var(--ng)' }} />
-                          <span style={{ flex: t.unknown, background: 'var(--unknown)' }} />
-                        </>
-                      )}
-                    </span>
-                  </button>
+                  <span key={d} className="tcal-slot">
+                    {button}
+                    {props.tip(d, colOf(d))}
+                  </span>
                 );
               })}
             </div>
