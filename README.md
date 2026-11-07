@@ -52,9 +52,9 @@ curl -X POST http://localhost:5173/api/line/webhook \
 npx void deploy --platform cloudflare     # 初回はブラウザでCloudflareにログイン
 npx void secret put LINE_CHANNEL_SECRET        # Messaging API チャネル
 npx void secret put LINE_CHANNEL_ACCESS_TOKEN  # Messaging API チャネル（長期）
-npx void secret put LINE_LOGIN_CHANNEL_ID      # LINE ログインチャネルのチャネルID
-npx void secret put LIFF_ID
 ```
+
+LIFF ID と LINE ログインのチャネルID は秘密ではないので `env.ts` の既定値に入れている。
 
 告知のルール（5分まとめ、夜22時〜朝8時は8時まで待つ）や状態の流れは仕様書を参照。
 
