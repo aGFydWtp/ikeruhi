@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "source": {
+    "name": "ikeruhi"
+  },
+  "resolved": {
+    "name": "ikeruhi",
+    "account_id": "3bae3fb8abf763a2d88406ee1c2a554c",
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_name": "ikeruhi-db",
+        "database_id": "54c79c1b-d0e9-4c89-8647-873638acc436",
+        "migrations_dir": "./db/migrations"
+      }
+    ]
+  },
+  "text": "{\n  \"name\": \"ikeruhi\",\n  \"account_id\": \"3bae3fb8abf763a2d88406ee1c2a554c\",\n  \"d1_databases\": [\n    {\n      \"binding\": \"DB\",\n      \"database_name\": \"ikeruhi-db\",\n      \"database_id\": \"54c79c1b-d0e9-4c89-8647-873638acc436\",\n      \"migrations_dir\": \"./db/migrations\"\n    }\n  ]\n}\n"
+}
