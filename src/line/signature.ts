@@ -4,11 +4,11 @@ const encoder = new TextEncoder();
 
 export async function verifyLineSignature(
   channelSecret: string,
-  rawBody: ArrayBuffer | Uint8Array,
+  rawBody: ArrayBuffer,
   signature: string | null | undefined,
 ): Promise<boolean> {
   if (!signature) return false;
-  let expected: Uint8Array;
+  let expected: Uint8Array<ArrayBuffer>;
   try {
     expected = Uint8Array.from(atob(signature), (ch) => ch.charCodeAt(0));
   } catch {

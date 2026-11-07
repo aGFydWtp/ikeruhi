@@ -5,9 +5,13 @@ import { verifyLineSignature } from '../../../src/line/signature';
 // LINE Webhook。署名は「受け取ったままの本文」で確かめる必要があるので、
 // JSON にパースする前に arrayBuffer で生のバイト列を取る。
 export const POST = defineHandler(async (c) => {
+  const secret = env.LINE_CHANNEL_SECRET;
+  if (!secret) {
+    return c.text('LINE_CHANNEL_SECRET is not set', 503);
+  }
   const raw = await c.req.arrayBuffer();
   const ok = await verifyLineSignature(
-    env.LINE_CHANNEL_SECRET,
+    secret,
     raw,
     c.req.header('x-line-signature'),
   );
