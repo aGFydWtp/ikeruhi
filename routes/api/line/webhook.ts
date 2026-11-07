@@ -51,7 +51,7 @@ async function handle(e: LineEvent) {
   const liffId = env.LIFF_ID;
 
   if (e.type === 'join' && groupId && e.replyToken) {
-    if (!liffId) return reply(e.replyToken, [{ type: 'text', text: 'いけるひ（準備中）' }]);
+    if (!liffId) return reply(e.replyToken, [{ type: 'text', text: 'アケナ（準備中）' }]);
     const token = await issueCreateToken(groupId, null);
     await log(null, null, 'join', { groupId });
     return reply(e.replyToken, [introCard(liffId, token)]);
@@ -66,7 +66,7 @@ async function handle(e: LineEvent) {
     }
     const text = e.message.text ?? '';
     const name = (text.slice(0, self.index) + text.slice(self.index + self.length)).trim().slice(0, 40);
-    if (!liffId) return reply(e.replyToken, [{ type: 'text', text: 'いけるひ（準備中）' }]);
+    if (!liffId) return reply(e.replyToken, [{ type: 'text', text: 'アケナ（準備中）' }]);
     const token = await issueCreateToken(groupId, name || null);
     await log(null, e.source?.userId ?? null, 'mention', { groupId, name });
     return reply(e.replyToken, [name ? createCard(liffId, token, name) : introCard(liffId, token)]);

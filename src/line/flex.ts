@@ -116,9 +116,12 @@ function periodLabel(start: DateStr, end: DateStr): string {
 
 export function introCard(liffId: string, token: string): LineMessage {
   return flex(
-    'いけるひ',
+    '調整の神 アケナ',
     bubble(
-      [text('いけるひ', { weight: 'bold', size: 'xl', color: C.themeDark })],
+      [
+        text('調整の神', { size: 'sm', color: C.sub, weight: 'bold' }),
+        text('アケナ', { weight: 'bold', size: 'xl', color: C.themeDark }),
+      ],
       [uriButton('イベントを作る', liffUrl(liffId, { c: token }))],
     ),
   );
