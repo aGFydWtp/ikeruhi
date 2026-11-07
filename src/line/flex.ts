@@ -120,7 +120,6 @@ export function introCard(liffId: string, token: string): LineMessage {
     bubble(
       [text('いけるひ', { weight: 'bold', size: 'xl', color: C.themeDark })],
       [uriButton('イベントを作る', liffUrl(liffId, { c: token }))],
-      { bodyBg: C.ground },
     ),
   );
 }
