@@ -10,7 +10,9 @@
     "types": [
       "void/env"
     ],
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "allowImportingTsExtensions": true,
+    "noEmit": true
   },
   "include": [
     "src",

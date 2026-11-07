@@ -7,7 +7,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "void deploy --platform cloudflare",
-    "postinstall": "void prepare"
+    "postinstall": "void prepare",
+    "test": "node --test tests/*.test.ts"
   },
   "repository": {
     "type": "git",
