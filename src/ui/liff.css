@@ -1,0 +1,115 @@
+:root {
+  --theme: #1F7A68;
+  --theme-dark: #165C4F;
+  --theme-light: #DFF1EC;
+  --ng: #D0503E;
+  --ng-light: #FCE9E5;
+  --unknown: #C6D0CD;
+  --ground: #EFF4F2;
+  --text: #1F2D2B;
+  --sub: #56635F;
+  --line: #E2EAE7;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--ground); color: var(--text); }
+body {
+  font-family: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  -webkit-tap-highlight-color: transparent;
+}
+button, input, textarea { font: inherit; color: inherit; }
+.page { max-width: 480px; margin: 0 auto; padding: 16px 16px 112px; }
+.head { display: flex; align-items: center; gap: 12px; padding: 4px 4px 12px; }
+.head-text { flex: 1; min-width: 0; }
+.head-title { font-size: 20px; font-weight: 700; margin: 0; overflow-wrap: anywhere; }
+.head-sub { font-size: 14px; color: var(--sub); margin-top: 2px; }
+.section-title { font-size: 14px; color: var(--sub); margin: 20px 4px 8px; font-weight: 700; }
+.card { background: #fff; border-radius: 16px; padding: 16px; }
+.center { text-align: center; padding: 48px 16px; color: var(--sub); }
+
+/* 入力 */
+.input, .textarea {
+  width: 100%; border: 1px solid var(--line); border-radius: 12px; background: #fff;
+  padding: 12px 14px; font-size: 16px; outline: none;
+}
+.input:focus, .textarea:focus { border-color: var(--theme); }
+.textarea { min-height: 72px; resize: vertical; }
+
+/* チップ */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 8px 14px;
+  font-size: 14px; cursor: pointer;
+}
+.chip[aria-pressed='true'] { background: var(--theme); border-color: var(--theme); color: #fff; }
+
+/* 曜日トグル */
+.weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.wd {
+  aspect-ratio: 1; border-radius: 12px; border: 2px solid transparent; background: #fff;
+  font-size: 16px; cursor: pointer;
+}
+.wd[aria-pressed='true'] { border-color: var(--ng); background: var(--ng-light); }
+
+/* カレンダー */
+.cal { background: #fff; border-radius: 16px; padding: 12px 8px; }
+.cal-row { display: grid; grid-template-columns: repeat(7, 1fr); }
+.cal-head .cal-wd { text-align: center; font-size: 14px; color: var(--sub); padding-bottom: 6px; }
+.cal-month { padding-top: 12px; }
+.cal-month + .cal-month { margin-top: 4px; }
+.cal-cell { height: 44px; display: flex; align-items: center; justify-content: center; position: relative; }
+.cal-day { border: 0; background: none; padding: 0; cursor: pointer; }
+.cal-day:disabled { cursor: default; color: var(--unknown); }
+.cal-num {
+  width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.cal-x {
+  width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: var(--ng); color: #fff; font-size: 16px; font-weight: 700;
+}
+.cal-month-label { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); font-size: 11px; color: var(--sub); white-space: nowrap; }
+.cal-nav { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 8px; }
+.cal-nav-title { font-weight: 700; }
+.icon-btn { border: 0; background: var(--ground); width: 36px; height: 36px; border-radius: 50%; font-size: 20px; cursor: pointer; }
+.icon-btn:disabled { opacity: .3; }
+.cal-day.in-range { background: var(--theme-light); }
+.cal-day.is-edge .cal-num { background: var(--theme); color: #fff; }
+
+/* ④ の行 */
+.rows { display: flex; flex-direction: column; gap: 10px; }
+.row { background: #fff; border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+.row-date { flex: 1; font-size: 18px; font-weight: 700; }
+.row-prev { font-size: 14px; color: var(--ng); font-weight: 500; margin-top: 2px; }
+.marks { display: flex; gap: 8px; }
+.mark {
+  width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--ground);
+  font-size: 18px; font-weight: 700; color: var(--sub); cursor: pointer;
+}
+.row.answered .mark { background: transparent; color: var(--unknown); }
+.row.answered .mark.sel-ok { background: var(--theme); color: #fff; }
+.row.answered .mark.sel-ng { background: var(--ng); color: #fff; }
+.row.answered .mark.sel-unknown { background: var(--sub); color: #fff; }
+.left { font-size: 14px; color: var(--sub); text-align: right; margin: 8px 4px 0; }
+
+/* アコーディオン */
+.acc { margin-top: 20px; }
+.acc-btn {
+  width: 100%; display: flex; justify-content: space-between; align-items: center; border: 0; background: none;
+  padding: 8px 4px; font-size: 14px; color: var(--sub); font-weight: 700; cursor: pointer;
+}
+.acc-body { display: flex; flex-direction: column; gap: 12px; }
+
+/* 送信ボタン */
+.bottom {
+  position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--ground) 70%, rgba(239,244,242,0));
+}
+.primary {
+  display: block; width: 100%; max-width: 448px; margin: 0 auto; border: 0; border-radius: 999px;
+  background: var(--theme); color: #fff; font-size: 16px; font-weight: 700; padding: 14px; cursor: pointer;
+}
+.primary:disabled { opacity: .4; }
+.error { color: var(--ng); font-size: 14px; text-align: center; margin-top: 8px; }
+.date-input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }

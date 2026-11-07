@@ -9,5 +9,6 @@ export default defineConfig({
   },
   cloudflare: {
     name: 'ikeruhi',
+    observability: { enabled: true },
   },
 });
