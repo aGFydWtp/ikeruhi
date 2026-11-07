@@ -11,7 +11,7 @@ export const loader = defineHandler(() => {
 export type Props = InferProps<typeof loader>;
 
 export const head = defineHead(() => ({
-  title: 'いけるひ',
+  title: 'アケナ',
   htmlAttrs: { lang: 'ja' },
   meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' }],
   link: [

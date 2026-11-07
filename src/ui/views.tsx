@@ -229,7 +229,7 @@ export function CreateView(props: { token: string; initialName: string }) {
       });
       closeOr(() => setDone(true));
     } catch (e) {
-      setError((e as Error).message === 'token_expired' ? 'このカードは期限切れです。もう一度 @いけるひ を呼んでください' : '送れませんでした');
+      setError((e as Error).message === 'token_expired' ? 'このカードは期限切れです。もう一度 @アケナ を呼んでください' : '送れませんでした');
     } finally {
       setBusy(false);
     }

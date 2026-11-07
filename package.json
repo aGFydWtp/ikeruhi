@@ -1,7 +1,7 @@
 {
   "name": "ikeruhi",
   "version": "1.0.0",
-  "description": "いけるひ: LINEグループで飲み会などの日程を候補3日に絞るbot",
+  "description": "調整の神 アケナ: LINEグループで飲み会などの日程を候補3日に絞るbot",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
