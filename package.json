@@ -1,0 +1,41 @@
+{
+  "name": "ikeruhi",
+  "version": "1.0.0",
+  "description": "いけるひ: LINEグループで飲み会などの日程を候補3日に絞るbot",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "void deploy --platform cloudflare",
+    "postinstall": "void prepare"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aGFydWtp/ikeruhi.git"
+  },
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/aGFydWtp/ikeruhi/issues"
+  },
+  "homepage": "https://github.com/aGFydWtp/ikeruhi#readme",
+  "devDependencies": {
+    "void": "^1.6.2",
+    "vite": "^8.0.10",
+    "typescript": "^7.0.2",
+    "@void/react": "1.6.2",
+    "oxc-transform-react": "^0.152.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3"
+  },
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "hono": "^4.11.9",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "zod": "^4.6.7"
+  },
+  "engines": {
+    "node": ">=24.22.0"
+  }
+}

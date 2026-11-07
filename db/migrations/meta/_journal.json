@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1794024170331,
+      "tag": "20261107040250_acoustic_puma",
+      "breakpoints": true
+    }
+  ]
+}
