@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import type { Mark } from '../core/aggregate.ts';
-import { type DateStr, WEEKDAY_LABELS, addDays, diffDays, formatShort, todayJst } from '../core/dates.ts';
+import { type DateStr, WEEKDAY_LABELS, addDays, diffDays, formatShort, todayJst, weekdayOf } from '../core/dates.ts';
 import { api, closeOr } from './api.ts';
-import { PeriodCalendar, RangeCalendar } from './Calendar.tsx';
+import { Chevron, DayPicker, PeriodCalendar, RangeCalendar, WeekdayToggles } from './Calendar.tsx';
 import { type NgState, activeDates, ngOf, setDateNg, toggleWeekday } from './ngState.ts';
 
 export interface EventView {
@@ -25,10 +25,8 @@ export interface EventView {
 function Header(props: { title: string; sub?: string }) {
   return (
     <header className="head">
-      <div className="head-text">
-        <h1 className="head-title">{props.title}</h1>
-        {props.sub && <div className="head-sub">{props.sub}</div>}
-      </div>
+      <h1 className="head-title">{props.title}</h1>
+      {props.sub && <div className="head-sub">{props.sub}</div>}
     </header>
   );
 }
@@ -48,15 +46,12 @@ export function Done(props: { text: string }) {
   return <div className="center">{props.text}</div>;
 }
 
-function periodSub(start: DateStr, end: DateStr) {
-  return `${formatShort(start)}〜${formatShort(end)}`;
-}
-
 // ---- 締切のチップ ----
 
 type DeadlineKind = 'none' | '1d' | '3d' | '7d' | 'date';
 
 function DeadlineChips(props: { kind: DeadlineKind; date: DateStr | null; min: DateStr; max: DateStr; onChange: (k: DeadlineKind, d: DateStr | null) => void }) {
+  const [picker, setPicker] = useState(false);
   const opts: Array<[DeadlineKind, string]> = [
     ['none', 'なし'],
     ['1d', '明日まで'],
@@ -64,30 +59,45 @@ function DeadlineChips(props: { kind: DeadlineKind; date: DateStr | null; min: D
     ['7d', '1週間以内'],
   ];
   return (
-    <div className="chips">
-      {opts.map(([k, label]) => (
-        <button key={k} type="button" className="chip" aria-pressed={props.kind === k} onClick={() => props.onChange(k, null)}>
-          {label}
+    <>
+      <div className="chips">
+        {opts.map(([k, label]) => (
+          <button key={k} type="button" className="chip" aria-pressed={props.kind === k} onClick={() => { setPicker(false); props.onChange(k, null); }}>
+            {label}
+          </button>
+        ))}
+        <button type="button" className="chip" aria-pressed={props.kind === 'date' && !!props.date} aria-expanded={picker} onClick={() => setPicker(!picker)}>
+          {props.kind === 'date' && props.date ? `${formatShort(props.date)}まで` : '日付を指定'}
         </button>
-      ))}
-      <label className="chip" aria-pressed={props.kind === 'date'} style={{ position: 'relative' }}>
-        {props.kind === 'date' && props.date ? `${formatShort(props.date)}まで` : '日付を指定'}
-        <input
-          className="date-input"
-          type="date"
+      </div>
+      {picker && (
+        <DayPicker
           min={props.min}
           max={props.max}
-          value={props.date ?? ''}
-          onChange={(e) => e.target.value && props.onChange('date', e.target.value)}
-          onClick={(e) => (e.currentTarget as HTMLInputElement & { showPicker?: () => void }).showPicker?.()}
+          value={props.kind === 'date' ? props.date : null}
+          onPick={(d) => { setPicker(false); props.onChange('date', d); }}
         />
-      </label>
-    </div>
+      )}
+    </>
   );
 }
 
 function deadlineBody(kind: DeadlineKind, date: DateStr | null) {
   return kind === 'date' ? { kind, date } : { kind };
+}
+
+/** 範囲の選び方：最初は1日、外側を押すとそちらへ広げ、内側を押すと近いほうの端を動かす */
+function nextRange(start: DateStr | null, end: DateStr | null, d: DateStr): [DateStr, DateStr] {
+  if (!start || !end) return [d, d];
+  let s = start;
+  let e = end;
+  if (d < s) s = d;
+  else if (d > e) e = d;
+  else if (s === e) return [d, d];
+  else if (diffDays(s, d) < diffDays(d, e)) s = d;
+  else e = d;
+  if (diffDays(s, e) + 1 > 62) return [d, d];
+  return [s, e];
 }
 
 // ---- ② イベント作成 ----
@@ -106,15 +116,9 @@ export function CreateView(props: { token: string; initialName: string }) {
   const [done, setDone] = useState(false);
 
   const pick = (d: DateStr) => {
-    if (!start || end || d < start) {
-      setStart(d);
-      setEnd(null);
-    } else if (diffDays(start, d) + 1 > 62) {
-      setStart(d);
-      setEnd(null);
-    } else {
-      setEnd(d);
-    }
+    const [s, e] = nextRange(start, end, d);
+    setStart(s);
+    setEnd(e);
   };
   const ready = name.trim() && start && (dk !== 'date' || dd);
 
@@ -137,12 +141,18 @@ export function CreateView(props: { token: string; initialName: string }) {
   if (done) return <Done text="グループに送りました" />;
   return (
     <main className="page">
-      <div className="section-title">イベント名</div>
-      <input className="input" value={name} maxLength={40} placeholder="忘年会" onChange={(e) => setName(e.target.value)} />
-      <div className="section-title">いつ頃やる？{start && <span style={{ fontWeight: 500 }}>　{periodSub(start, end ?? start)}</span>}</div>
-      <RangeCalendar month={month} onMonth={setMonth} min={tomorrow} start={start} end={end} onPick={pick} />
-      <div className="section-title">締め切り</div>
-      <DeadlineChips kind={dk} date={dd} min={tomorrow} max={end ?? start ?? addDays(tomorrow, 62)} onChange={(k, d) => { setDk(k); setDd(d); }} />
+      <div className="name-block">
+        <label htmlFor="evName" className="label">イベント名</label>
+        <input id="evName" className="name-input" value={name} maxLength={40} placeholder="忘年会" onChange={(e) => setName(e.target.value)} />
+      </div>
+      <div className="body">
+        <span className="label cal-label">いつ頃やる？</span>
+        <RangeCalendar month={month} onMonth={setMonth} min={tomorrow} start={start} end={end} onPick={pick} />
+        <div className="field">
+          <span className="label">締め切り</span>
+          <DeadlineChips kind={dk} date={dd} min={tomorrow} max={end ?? start ?? addDays(tomorrow, 62)} onChange={(k, d) => { setDk(k); setDd(d); }} />
+        </div>
+      </div>
       <SubmitBar label="グループに送る" disabled={!ready} busy={busy} error={error} onClick={submit} />
     </main>
   );
@@ -164,10 +174,9 @@ export function PeriodView(props: { data: EventView }) {
   const minStart = ev.startDate < today ? ev.startDate : addDays(today, 1);
 
   const pick = (d: DateStr) => {
-    if (!start || end || d < start) {
-      setStart(d);
-      setEnd(null);
-    } else if (diffDays(start, d) + 1 <= 62) setEnd(d);
+    const [s, e] = nextRange(start, end, d);
+    setStart(s);
+    setEnd(e);
   };
 
   const submit = async () => {
@@ -193,12 +202,13 @@ export function PeriodView(props: { data: EventView }) {
   if (done) return <Done text="変更しました" />;
   return (
     <main className="page">
-      <Header title={ev.name} sub={start ? periodSub(start, end ?? start) : undefined} />
-      <div className="section-title">いつ頃やる？</div>
+      <Header title={ev.name} />
+      <div className="body">
+      <span className="label cal-label">いつ頃やる？</span>
       <RangeCalendar month={month} onMonth={setMonth} min={minStart} start={start} end={end} onPick={pick} />
       {ev.status === 'collecting' && (
-        <>
-          <div className="section-title">締め切り</div>
+        <div className="field">
+          <span className="label">締め切り</span>
           <DeadlineChips
             kind={dk ?? (ev.answerDeadline ? 'date' : 'none')}
             date={dk ? dd : ev.answerDeadline ? todayJst(new Date(ev.answerDeadline)) : null}
@@ -206,8 +216,9 @@ export function PeriodView(props: { data: EventView }) {
             max={end ?? start ?? ev.endDate}
             onChange={(k, d) => { setDk(k); setDd(d); }}
           />
-        </>
+        </div>
       )}
+      </div>
       <SubmitBar label="変更する" disabled={!start || (dk === 'date' && !dd)} busy={busy} error={error} onClick={submit} />
     </main>
   );
@@ -215,17 +226,11 @@ export function PeriodView(props: { data: EventView }) {
 
 // ---- ③④ 共通：空いてない日を選ぶ ----
 
-function NgPicker(props: { ev: EventView['event']; today: DateStr; state: NgState; onChange: (s: NgState) => void; wish: string; onWish: (w: string) => void; dates: DateStr[] }) {
+function NgPicker(props: { ev: EventView['event']; today: DateStr; state: NgState; onChange: (s: NgState) => void; dates: DateStr[] }) {
   const { ev, today, state } = props;
   return (
     <>
-      <div className="weekdays">
-        {WEEKDAY_LABELS.map((w, i) => (
-          <button key={w} type="button" className="wd" aria-pressed={state.weekdayNg.includes(i)} onClick={() => props.onChange(toggleWeekday(state, i, props.dates))}>
-            {w}
-          </button>
-        ))}
-      </div>
+      <WeekdayToggles ng={state.weekdayNg} onToggle={(w) => props.onChange(toggleWeekday(state, w, props.dates))} />
       <PeriodCalendar
         start={ev.startDate}
         end={ev.endDate}
@@ -233,8 +238,16 @@ function NgPicker(props: { ev: EventView['event']; today: DateStr; state: NgStat
         isNg={(d) => ngOf(state, d)}
         onToggle={(d) => props.onChange(setDateNg(state, d, !ngOf(state, d), props.dates))}
       />
-      <textarea className="textarea" placeholder="土曜日だと嬉しい" maxLength={200} value={props.wish} onChange={(e) => props.onWish(e.target.value)} />
     </>
+  );
+}
+
+function WishField(props: { value: string; onChange: (w: string) => void; inCard?: boolean }) {
+  return (
+    <div className={`field wish${props.inCard ? ' in-card' : ''}`}>
+      <label htmlFor="wish" className="label">要望</label>
+      <textarea id="wish" className="textarea" placeholder="土曜日だと嬉しい" maxLength={200} value={props.value} onChange={(e) => props.onChange(e.target.value)} />
+    </div>
   );
 }
 
@@ -271,9 +284,13 @@ export function RoughView(props: { data: EventView }) {
   if (s.done) return <Done text="送信しました" />;
   return (
     <main className="page">
-      <Header title={ev.name} sub={periodSub(ev.startDate, ev.endDate)} />
-      <div className="acc-body">
-        <NgPicker ev={ev} today={today} state={state} onChange={setState} wish={wish} onWish={setWish} dates={dates} />
+      <Header title={ev.name} sub={ev.answerDeadline ? leftLabel(ev.answerDeadline) ?? undefined : undefined} />
+      <div className="body">
+        <div className="card ng-card">
+          <span className="label">空いてない日を選ぶ</span>
+          <NgPicker ev={ev} today={today} state={state} onChange={setState} dates={dates} />
+        </div>
+        <WishField value={wish} onChange={setWish} />
       </div>
       <SubmitBar label="送信する" busy={s.busy} error={s.error} onClick={s.submit} />
     </main>
@@ -333,52 +350,61 @@ export function RecheckView(props: { data: EventView }) {
   const deadline = ev.status === 'tentative' ? ev.tentativeUntil : ev.status === 'candidates' ? round?.deadline : null;
   const left = deadline ? leftLabel(deadline) : null;
 
+  const allAnswered = targets.every((d) => selected(d) != null);
+  const sub = left ?? (ev.status === 'tentative' ? '仮決定' : ev.status === 'decided' ? '決定' : undefined);
+
   if (s.done) return <Done text="送信しました" />;
   return (
     <main className="page">
-      <Header title={ev.name} sub={ev.status === 'tentative' ? '仮決定' : ev.status === 'decided' ? '決定' : periodSub(ev.startDate, ev.endDate)} />
-      <div className="section-title">この日は空いてる？</div>
-      <div className="rows">
-        {targets.map((d) => {
-          const sel = selected(d);
-          const prevNg = !answeredInRound(d) && ngOf(saved, d);
-          return (
-            <div key={d} className={`row${sel ? ' answered' : ''}`}>
-              <div className="row-date">
-                {formatShort(d)}
-                {prevNg && <div className="row-prev">前に空いてないと答えた日</div>}
+      <Header title={ev.name} sub={sub} />
+      <div className="body">
+        <span className="label rows-label">この日は空いてる？</span>
+        <div className="card rows">
+          {targets.map((d) => {
+            const sel = selected(d);
+            const prevNg = !answeredInRound(d) && ngOf(saved, d);
+            return (
+              <div key={d} className={`row${sel ? ' answered' : ''}`}>
+                <div className="row-main">
+                  <span className="row-date">
+                    {Number(d.slice(5, 7))}/{Number(d.slice(8))}
+                    <span className="row-wd">({WEEKDAY_LABELS[weekdayOf(d)]})</span>
+                  </span>
+                  {(['ok', 'ng', 'unknown'] as Mark[]).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      className={`mark${sel === m ? ` sel-${m}` : ''}`}
+                      aria-pressed={sel === m}
+                      aria-label={m === 'ok' ? '空いてる' : m === 'ng' ? '空いてない' : '分からない'}
+                      onClick={() => choose(d, m)}
+                    >
+                      {m === 'ok' ? '○' : m === 'ng' ? '✕' : '?'}
+                    </button>
+                  ))}
+                </div>
+                {prevNg && <span className="row-prev">前に空いてないと答えた日</span>}
               </div>
-              <div className="marks">
-                {(['ok', 'ng', 'unknown'] as Mark[]).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    className={`mark${sel === m ? ` sel-${m}` : ''}`}
-                    aria-pressed={sel === m}
-                    aria-label={m === 'ok' ? '空いてる' : m === 'ng' ? '空いてない' : '分からない'}
-                    onClick={() => choose(d, m)}
-                  >
-                    {m === 'ok' ? '○' : m === 'ng' ? '✕' : '?'}
-                  </button>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      {left && <div className="left">{left}</div>}
-      <div className="acc">
-        <button type="button" className="acc-btn" aria-expanded={open} onClick={() => setOpen(!open)}>
-          空いてない日を見直す <span>{open ? '▴' : '▾'}</span>
-        </button>
-        {open && (
-          <div className="acc-body">
-            <NgPicker ev={ev} today={today} state={state} onChange={onCalendar} wish={wish} onWish={setWish} dates={dates} />
+            );
+          })}
+        </div>
+        {open ? (
+          <div className="card acc">
+            <button type="button" className="acc-btn" aria-expanded onClick={() => setOpen(false)}>
+              空いてない日を見直す
+              <Chevron dir="up" />
+            </button>
+            <NgPicker ev={ev} today={today} state={state} onChange={onCalendar} dates={dates} />
+            <WishField value={wish} onChange={setWish} inCard />
           </div>
+        ) : (
+          <button type="button" className="acc-pill" aria-expanded={false} onClick={() => setOpen(true)}>
+            空いてない日を見直す
+            <Chevron dir="down" />
+          </button>
         )}
       </div>
-      <SubmitBar label="送信する" busy={s.busy} error={s.error} onClick={s.submit} />
+      <SubmitBar label="送信する" disabled={!allAnswered} busy={s.busy} error={s.error} onClick={s.submit} />
     </main>
   );
 }
-
